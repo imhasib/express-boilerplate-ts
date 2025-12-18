@@ -24,9 +24,17 @@ A production-ready Express.js boilerplate with TypeScript, MongoDB, JWT Authenti
 
 This is a production-ready boilerplate for building RESTful APIs using Express.js and TypeScript. It comes with pre-configured authentication, validation, error handling, logging, API documentation, and deployment configurations. The project follows best practices and a scalable folder structure to help you kickstart your Node.js projects quickly.
 
+### Quick Highlights
+
+- **Google OAuth Ready**: Pre-configured Google OAuth 2.0 authentication with Passport.js
+- **Dual Auth Methods**: Support both traditional JWT and Google social login
+- **Production Ready**: Fully Dockerized with PM2 cluster mode support
+- **Type Safe**: Complete TypeScript implementation with strict type checking
+
 ## Features
 
 - **Authentication**: JWT-based auth (Access & Refresh Tokens), Password hashing (Bcrypt)
+- **Google OAuth 2.0**: Social login with Google authentication
 - **TypeScript**: Fully typed codebase with strict type checking
 - **Validation**: Request validation using Zod schemas
 - **Documentation**: Swagger/OpenAPI 3.0 auto-generated API docs
@@ -105,14 +113,21 @@ Create a `.env` file in the root directory with the following variables:
 # Application
 NODE_ENV=development
 PORT=3000
+SWAGGER_SERVER_URL=http://localhost:3000
 
 # Database
 MONGODB_URI=mongodb://localhost:27017/boilerplate
 
 # JWT Configuration
-JWT_SECRET=your_jwt_secret_key_here
-JWT_ACCESS_EXPIRATION_MINUTES=30
-JWT_REFRESH_EXPIRATION_DAYS=7
+JWT_ACCESS_SECRET=your-access-secret-key-change-in-production
+JWT_REFRESH_SECRET=your-refresh-secret-key-change-in-production
+JWT_ACCESS_EXPIRATION=15m
+JWT_REFRESH_EXPIRATION=7d
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
@@ -124,6 +139,16 @@ CORS_ORIGIN=http://localhost:3000
 # Logging
 LOG_LEVEL=debug
 ```
+
+### Getting Google OAuth Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google+ API
+4. Go to **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
+5. Configure the OAuth consent screen
+6. Add authorized redirect URI: `http://localhost:3000/api/auth/google/callback`
+7. Copy the **Client ID** and **Client Secret** to your `.env` file
 
 ## Project Structure
 
@@ -153,14 +178,16 @@ Interactive API documentation is automatically generated using Swagger/OpenAPI 3
 ### Example Endpoints
 
 ```
-POST   /api/auth/register    # Register new user
-POST   /api/auth/login        # Login user
-POST   /api/auth/refresh      # Refresh access token
-POST   /api/auth/logout       # Logout user
-GET    /api/users             # Get all users (protected)
-GET    /api/users/:id         # Get user by ID (protected)
-PATCH  /api/users/:id         # Update user (protected)
-DELETE /api/users/:id         # Delete user (protected)
+POST   /api/auth/register           # Register new user
+POST   /api/auth/login              # Login user
+GET    /api/auth/google             # Initiate Google OAuth login
+GET    /api/auth/google/callback    # Google OAuth callback
+POST   /api/auth/refresh            # Refresh access token
+POST   /api/auth/logout             # Logout user
+GET    /api/users                   # Get all users (protected)
+GET    /api/users/:id               # Get user by ID (protected)
+PATCH  /api/users/:id               # Update user (protected)
+DELETE /api/users/:id               # Delete user (protected)
 ```
 
 ## Error Handling
@@ -200,20 +227,52 @@ const userSchema = z.object({
 
 ## Authentication
 
+The application supports multiple authentication methods:
+
+### JWT Authentication
+
 JWT-based authentication with access and refresh tokens:
 
-- **Access Tokens**: Short-lived tokens (30 minutes default)
+- **Access Tokens**: Short-lived tokens (15 minutes default)
 - **Refresh Tokens**: Long-lived tokens (7 days default)
 - **Password Hashing**: Bcrypt for secure password storage
 - **Token Storage**: Refresh tokens stored in database
 - **Protected Routes**: Middleware to verify JWT tokens
 
-### Authentication Flow
+**Traditional Auth Flow:**
 
-1. User registers or logs in
+1. User registers or logs in with email/password
 2. Server returns access token and refresh token
-3. Client includes access token in Authorization header
+3. Client includes access token in Authorization header: `Bearer <token>`
 4. When access token expires, use refresh token to get new access token
+
+### Google OAuth 2.0
+
+Social authentication using Google OAuth:
+
+- **Passport.js**: Google OAuth strategy integration
+- **Automatic Account Creation**: Creates user account on first login
+- **Seamless Integration**: Returns JWT tokens after successful OAuth
+- **Secure Callback**: Validates OAuth state and credentials
+
+**Google OAuth Flow:**
+
+1. User clicks "Login with Google" button
+2. Redirect to `/api/auth/google` endpoint
+3. User authenticates with Google
+4. Google redirects back to `/api/auth/google/callback`
+5. Server creates/finds user and returns JWT tokens
+6. Client uses JWT tokens for subsequent requests
+
+**Implementation Example:**
+
+```typescript
+// Frontend - Initiate Google login
+window.location.href = 'http://localhost:3000/api/auth/google';
+
+// Backend handles callback and returns tokens
+// Client receives: { accessToken, refreshToken, user }
+```
 
 ## Authorization
 
