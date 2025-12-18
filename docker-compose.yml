@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017/boilerplate
+      - NODE_ENV=production
+      - JWT_SECRET=my-secret
+      - JWT_ACCESS_EXPIRATION_MINUTES=15m
+      - JWT_REFRESH_EXPIRATION_DAYS=7d
+      # - JWT_SECRET=${JWT_SECRET}
+      # - JWT_ACCESS_EXPIRATION_MINUTES=${JWT_ACCESS_EXPIRATION_MINUTES}
+      # - JWT_REFRESH_EXPIRATION_DAYS=${JWT_REFRESH_EXPIRATION_DAYS}
+      - GOOGLE_CLIENT_ID=1028087606574-tjn5bhn5d2h5u7a6d3pdsim26jcs74l9.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+      - GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
