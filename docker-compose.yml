@@ -15,8 +15,8 @@ services:
       # - JWT_SECRET=${JWT_SECRET}
       # - JWT_ACCESS_EXPIRATION_MINUTES=${JWT_ACCESS_EXPIRATION_MINUTES}
       # - JWT_REFRESH_EXPIRATION_DAYS=${JWT_REFRESH_EXPIRATION_DAYS}
-      - GOOGLE_CLIENT_ID=1028087606574-tjn5bhn5d2h5u7a6d3pdsim26jcs74l9.apps.googleusercontent.com
-      - GOOGLE_CLIENT_SECRET=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
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
     depends_on:
       - mongo
